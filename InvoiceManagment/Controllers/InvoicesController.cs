@@ -23,9 +23,6 @@ public class InvoicesController : Controller
         var invoices = _invoicesRepository.GetAllInvoices();
         return View(invoices);
     }
-
-    // Create a new invoice
-    // GET: Create a new invoice
     public IActionResult Create()
     {
         var invoice = new Invoice
@@ -42,80 +39,13 @@ public class InvoicesController : Controller
                 Text = p.Name
             }).ToList();
 
+        ViewBag.Message = TempData["message"];
+        ViewBag.SuccessMessage = TempData["SuccessMessage"];
+
         return View("Edit", invoice);
     }
 
-    // POST: Save (Add or Update) an invoice
-    [HttpPost]
-    public IActionResult Save(Invoice invoice)
-    {
-        if (!ModelState.IsValid)
-        {
-            // Reload products if validation fails
-            ViewData["Products"] = _productRepository.GetAll();
-            return View("Edit", invoice);
-        }
-
-        if (invoice.InvoiceId == 0)
-        {
-            // Add a new invoice
-            var newInvoiceId = _invoicesRepository.AddInvoice(invoice);
-
-            // Save invoice details
-            foreach (var detail in invoice.InvoiceDetails)
-            {
-                detail.InvoiceId = newInvoiceId;
-                _invoicesRepository.AddInvoiceDetail(detail);
-            }
-
-            // Save invoice payments
-            foreach (var payment in invoice.InvoicePayments)
-            {
-                payment.InvoiceId = newInvoiceId;
-                _invoicesRepository.AddInvoicePayment(payment);
-            }
-        }
-        else
-        {
-            // Update an existing invoice
-            _invoicesRepository.UpdateInvoice(invoice);
-
-            // Update or add invoice details
-            foreach (var detail in invoice.InvoiceDetails)
-            {
-                if (detail.InvoiceDetailId == 0)
-                {
-                    // Add new detail
-                    detail.InvoiceId = invoice.InvoiceId;
-                    _invoicesRepository.AddInvoiceDetail(detail);
-                }
-                else
-                {
-                    // Update existing detail
-                    _invoicesRepository.UpdateInvoiceDetail(detail);
-                }
-            }
-
-            // Update or add invoice payments
-            foreach (var payment in invoice.InvoicePayments)
-            {
-                if (payment.PaymentId == 0)
-                {
-                    // Add new payment
-                    payment.InvoiceId = invoice.InvoiceId;
-                    _invoicesRepository.AddInvoicePayment(payment);
-                }
-                else
-                {
-                    // Update existing payment
-                    _invoicesRepository.UpdateInvoicePayment(payment);
-                }
-            }
-        }
-
-        return RedirectToAction("Index");
-    }
-
+    // POST: Save (Add or Update) an invoice  
     // GET: Edit an existing invoice
     public IActionResult Edit(int id)
     {
@@ -164,24 +94,40 @@ public class InvoicesController : Controller
     }
 
     [HttpPost]
+    [HttpPost]
     public IActionResult CreateOrEditInvoice(Invoice model)
-    {
-       
-        if (model.InvoiceId == 0)
+    {       
+        // Check if InvoiceDetails is empty
+        if (model.InvoiceDetails == null || !model.InvoiceDetails.Any() || string.IsNullOrEmpty(model.CustomerName))
         {
-            InvoicePayment InvoicePayment =new InvoicePayment();
-            InvoicePayment.Amount = model.TotalAmount;
-            InvoicePayment.PaymentDate = model.InvoiceDate;
-            model.InvoicePayments.Add(InvoicePayment);
-           _invoicesRepository.AddInvoiceWithDetailsAndPayments(model);
-        }
-        else
-        {
-            _invoicesRepository.UpdateInvoiceWithDetailsAndPayments(model);
+            TempData["message"] = "Please fill all necessary details!";
+            return RedirectToAction("Create");
         }
 
+        // Check for invalid amounts
+        if (model.InvoiceDetails.Any(d => d.UnitPrice <= 0 || d.Quantity <= 0))
+        {
+            TempData["message"] = "All items must have a positive quantity and unit price.";
+            return RedirectToAction("Create");
+        }
+
+        var payment = new InvoicePayment
+        {
+            Amount = model.TotalAmount,
+            PaymentDate = model.InvoiceDate
+        };
+        model.InvoicePayments.Add(payment);
+
+        if (model.InvoiceId == 0)            
+            _invoicesRepository.AddInvoiceWithDetailsAndPayments(model);       
+        else       
+            _invoicesRepository.UpdateInvoiceWithDetailsAndPayments(model);
+        
+
+        TempData["SuccessMessage"] = "Invoice saved successfully!";
         return RedirectToAction("Index");
     }
+
     // Delete an invoice
     public IActionResult Delete(int id)
     {
@@ -226,19 +172,6 @@ public class InvoicesController : Controller
         return Ok();
     }
 
-    // Update an existing line item
-    [HttpPost]
-    public IActionResult UpdateInvoiceDetail([FromBody] InvoiceDetail detail)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest("Invalid line item data.");
-        }
-
-        _invoicesRepository.UpdateInvoiceDetail(detail);
-        return Ok();
-    }
-
     // Delete a line item
     [HttpPost]
     public IActionResult DeleteInvoiceDetail(int detailId)
@@ -277,42 +210,5 @@ public class InvoicesController : Controller
         }
 
         return PartialView("_PaymentsGrid", payments);
-    }
-
-    // Manage payments for an invoice
-    
-
-    // Add a new payment
-    [HttpPost]
-    public IActionResult AddPayment([FromBody] InvoicePayment payment)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest("Invalid payment data.");
-        }
-
-        _invoicesRepository.AddInvoicePayment(payment);
-        return Ok();
-    }
-
-    // Update an existing payment
-    [HttpPost]
-    public IActionResult UpdatePayment([FromBody] InvoicePayment payment)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest("Invalid payment data.");
-        }
-
-        _invoicesRepository.UpdateInvoicePayment(payment);
-        return Ok();
-    }
-
-    // Delete a payment
-    [HttpPost]
-    public IActionResult DeletePayment(int paymentId)
-    {
-        _invoicesRepository.DeleteInvoicePayment(paymentId);
-        return Ok();
     }
 }

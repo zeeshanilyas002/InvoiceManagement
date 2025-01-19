@@ -38,7 +38,8 @@ namespace InvoiceManagement.Data
                             {
                                 InvoiceId = (int)reader["InvoiceId"],
                                 CustomerName = reader["CustomerName"].ToString(),
-                                InvoiceDate = (DateTime)reader["InvoiceDate"]
+                                InvoiceDate = (DateTime)reader["InvoiceDate"],
+                                TotalInvoiceAmount = (decimal)reader["TotalAmount"]
                             });
                         }
                     }
@@ -405,11 +406,11 @@ namespace InvoiceManagement.Data
                             command.ExecuteNonQuery();
                         }
 
-                        // Delete existing InvoiceDetails to allow re-insertion
-                        using (var command = new SqlCommand("DeleteInvoiceDetailsByInvoiceId", connection))
+                        // Delete existing InvoicePayments to allow re-insertion
+                        using (var command = new SqlCommand("[DeleteInvoiceDetail]", connection))
                         {
                             command.CommandType = CommandType.StoredProcedure;
-                            command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+                            command.Parameters.AddWithValue("@InvoiceDetailId", invoice.InvoiceId);
 
                             command.ExecuteNonQuery();
                         }
@@ -429,14 +430,7 @@ namespace InvoiceManagement.Data
                             }
                         }
 
-                        // Delete existing InvoicePayments to allow re-insertion
-                        using (var command = new SqlCommand("[DeleteInvoiceDetail]", connection))
-                        {
-                            command.CommandType = CommandType.StoredProcedure;
-                            command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
-
-                            command.ExecuteNonQuery();
-                        }
+                       
 
                         // Add updated Invoice Payments (Details)
                         foreach (var payment in invoice.InvoicePayments)
