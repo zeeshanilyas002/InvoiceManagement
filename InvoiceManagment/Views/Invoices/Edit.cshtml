@@ -53,7 +53,6 @@
                                 }
                             }
                         </select>
-
                     </td>
                     <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].Quantity" class="form-control quantity" value="@detail.Quantity" /></td>
                     <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].UnitPrice" class="form-control unitPrice" value="@detail.UnitPrice" /></td>
@@ -84,7 +83,7 @@
 
             // Generate dropdown options dynamically from ViewBag
             const productOptions = `
-                @foreach (var product in (List<SelectListItem>)ViewBag.Products)
+                @foreach (var product in (List<SelectListItem>)ViewData["Products"])
                 {
                     <option value="@product.Value">@product.Text</option>
                 }
@@ -93,7 +92,7 @@
             const row = table.insertRow();
             row.innerHTML = `
                 <td>
-                    <select name="InvoiceDetails[${rowCount}].ProductId" class="form-control">
+                    <select name="InvoiceDetails[${rowCount}].ProductId" class="form-control product-select">
                         <option value="">Select Product</option>
                         ${productOptions}
                     </select>
@@ -105,11 +104,26 @@
             `;
         });
 
-        // Remove Product Row
-        document.addEventListener("click", function (e) {
-            if (e.target.classList.contains("removeRow")) {
-                e.target.closest("tr").remove();
-                calculateTotalAmount();
+        // Fetch product price on selection
+        document.addEventListener("change", function (e) {
+            if (e.target.classList.contains("product-select")) {
+                const productId = e.target.value;
+                const row = e.target.closest("tr");
+
+                if (productId) {
+                    fetch(`/Products/GetPrice?productId=${productId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            row.querySelector(".unitPrice").value = data.unitPrice;
+                            row.querySelector(".quantity").dispatchEvent(new Event("input"));
+                        })
+                        .catch(error => {
+                            alert("Error fetching product price: " + error.message);
+                        });
+                } else {
+                    row.querySelector(".unitPrice").value = 0;
+                    row.querySelector(".quantity").dispatchEvent(new Event("input"));
+                }
             }
         });
 

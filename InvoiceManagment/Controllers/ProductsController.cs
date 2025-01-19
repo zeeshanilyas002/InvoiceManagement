@@ -73,5 +73,17 @@ namespace InvoiceManagment.Controllers
             _productRepository.Delete(id);
             return RedirectToAction("Index");
         }
+
+        [HttpGet]
+        public IActionResult GetPrice(int productId)
+        {
+            var product = _productRepository.GetById(productId);
+            if (product == null)
+            {
+                return NotFound(new { message = "Product not found." });
+            }
+
+            return Json(new { unitPrice = product.Price });
+        }
     }
 }

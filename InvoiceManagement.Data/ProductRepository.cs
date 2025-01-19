@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 
 namespace InvoiceManagement.Data
 {
@@ -139,6 +140,29 @@ namespace InvoiceManagement.Data
                 command.ExecuteNonQuery();
                 _dbConnection.Close();
             }
+        }
+        public decimal? GetProductPrice(int productId)
+        {
+            using (var command = _dbConnection.CreateCommand())
+            {
+                command.CommandText = "GetProductPrice";
+                command.CommandType = CommandType.StoredProcedure;
+
+                var idParameter = command.CreateParameter();
+                idParameter.ParameterName = "@ProductId";
+                idParameter.Value = productId;
+                idParameter.DbType = DbType.Int32;
+                command.Parameters.Add(idParameter);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return (decimal)reader["UnitPrice"];
+                    }
+                }
+            }
+            return null;
         }
 
         public void Delete(int id)

@@ -14,6 +14,7 @@ namespace InvoiceManagement.Data
         void Add(Product product);
         void Update(Product product);
         void Delete(int id);
+        public decimal? GetProductPrice(int productId);
     }
 
 }

@@ -24,8 +24,6 @@ public class InvoicesController : Controller
         return View(invoices);
     }
 
-
-
     // Create a new invoice
     // GET: Create a new invoice
     public IActionResult Create()
@@ -46,8 +44,6 @@ public class InvoicesController : Controller
 
         return View("Edit", invoice);
     }
-
-
 
     // POST: Save (Add or Update) an invoice
     [HttpPost]
@@ -143,7 +139,6 @@ public class InvoicesController : Controller
 
         return View(invoice);
     }
-
     public IActionResult CreateOrEditInvoice(int? id)
     {
         var model = new Invoice();
