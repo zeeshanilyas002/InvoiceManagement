@@ -12,7 +12,7 @@
     <p><strong>Invoice ID:</strong> @Model.InvoiceId</p>
     <p><strong>Customer Name:</strong> @Model.CustomerName</p>
     <p><strong>Invoice Date:</strong> @Model.InvoiceDate.ToString("yyyy-MM-dd")</p>
-    <p><strong>Total Amount:</strong> @Model.TotalAmount.ToString("C")</p>
+    <p><strong>Total Amount:</strong> @Model.TotalAmount.ToString()</p>
 </div>
 
 <form asp-action="DeleteConfirmed" method="post">

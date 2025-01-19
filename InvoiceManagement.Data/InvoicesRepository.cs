@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace InvoiceManagement.Data
 {
@@ -302,6 +303,148 @@ namespace InvoiceManagement.Data
                 }
             }
             return totalPayments;
+        }
+        public void AddInvoiceWithDetailsAndPayments(Invoice invoice)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                try
+                {
+                    using (var connection = new SqlConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        // Add Invoice (Master)
+                        int invoiceId;
+                        using (var command = new SqlCommand("AddInvoice", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.Parameters.AddWithValue("@CustomerName", invoice.CustomerName);
+                            command.Parameters.AddWithValue("@InvoiceDate", invoice.InvoiceDate);
+
+                            // Retrieve the newly inserted InvoiceId
+                            invoiceId = Convert.ToInt32(command.ExecuteScalar());
+                        }
+
+                        // Add Invoice Details (Details)
+                        foreach (var detail in invoice.InvoiceDetails)
+                        {
+                            using (var command = new SqlCommand("AddInvoiceDetail", connection))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.Parameters.AddWithValue("@InvoiceId", invoiceId);
+                                command.Parameters.AddWithValue("@ProductId", detail.ProductId);
+                                command.Parameters.AddWithValue("@Quantity", detail.Quantity);
+                                command.Parameters.AddWithValue("@UnitPrice", detail.UnitPrice);
+
+                                command.ExecuteNonQuery();
+                            }
+                        }
+
+                        // Add Invoice Payments (Details)
+                        foreach (var payment in invoice.InvoicePayments)
+                        {
+                            using (var command = new SqlCommand("AddInvoicePayment", connection))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.Parameters.AddWithValue("@InvoiceId", invoiceId);
+                                command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
+                                command.Parameters.AddWithValue("@Amount", payment.Amount);
+
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                    }
+
+                    // Commit the transaction
+                    transactionScope.Complete();
+                }
+                catch (Exception ex)
+                {
+                    // Transaction is rolled back if an exception occurs
+                    throw new Exception("An error occurred while saving the invoice, details, and payments.", ex);
+                }
+            }
+        }
+
+        public void UpdateInvoiceWithDetailsAndPayments(Invoice invoice)
+        {
+            using (var transactionScope = new TransactionScope())
+            {
+                try
+                {
+                    using (var connection = new SqlConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        // Update Invoice (Master)
+                        using (var command = new SqlCommand("UpdateInvoice", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+                            command.Parameters.AddWithValue("@CustomerName", invoice.CustomerName);
+                            command.Parameters.AddWithValue("@InvoiceDate", invoice.InvoiceDate);
+
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Delete existing InvoiceDetails to allow re-insertion
+                        using (var command = new SqlCommand("DeleteInvoiceDetailsByInvoiceId", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Add updated Invoice Details (Details)
+                        foreach (var detail in invoice.InvoiceDetails)
+                        {
+                            using (var command = new SqlCommand("AddInvoiceDetail", connection))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+                                command.Parameters.AddWithValue("@ProductId", detail.ProductId);
+                                command.Parameters.AddWithValue("@Quantity", detail.Quantity);
+                                command.Parameters.AddWithValue("@UnitPrice", detail.UnitPrice);
+
+                                command.ExecuteNonQuery();
+                            }
+                        }
+
+                        // Delete existing InvoicePayments to allow re-insertion
+                        using (var command = new SqlCommand("DeleteInvoicePaymentsByInvoiceId", connection))
+                        {
+                            command.CommandType = CommandType.StoredProcedure;
+                            command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Add updated Invoice Payments (Details)
+                        foreach (var payment in invoice.InvoicePayments)
+                        {
+                            using (var command = new SqlCommand("AddInvoicePayment", connection))
+                            {
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
+                                command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
+                                command.Parameters.AddWithValue("@Amount", payment.Amount);
+
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                    }
+
+                    // Commit the transaction
+                    transactionScope.Complete();
+                }
+                catch (Exception ex)
+                {
+                    // Transaction is rolled back if an exception occurs
+                    throw new Exception("An error occurred while updating the invoice, details, and payments.", ex);
+                }
+            }
         }
 
     }

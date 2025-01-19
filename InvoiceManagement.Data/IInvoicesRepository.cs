@@ -27,7 +27,8 @@ namespace InvoiceManagement.Data
         void AddInvoicePayment(InvoicePayment payment);
         void UpdateInvoicePayment(InvoicePayment payment);
         void DeleteInvoicePayment(int paymentId);
-
+        void AddInvoiceWithDetailsAndPayments(Invoice invoice);
+        void UpdateInvoiceWithDetailsAndPayments(Invoice invoice);
         // Calculations
         decimal GetTotalPaymentsForInvoice(int invoiceId);
     }

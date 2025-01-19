@@ -1,6 +1,7 @@
 ﻿using InvoiceManagement.Data;
 using InvoiceManagement.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using PagedList.Core;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,11 @@ public class InvoicesController : Controller
     private readonly IInvoicesRepository _invoicesRepository;
     private readonly IProductRepository _productRepository;
 
-    public InvoicesController(IInvoicesRepository invoicesRepository, IProductRepository productRepository)
+    public InvoicesController(IInvoicesRepository invoiceRepository, IProductRepository productRepository)
     {
-        _invoicesRepository = invoicesRepository;
+        _invoicesRepository = invoiceRepository;
         _productRepository = productRepository;
     }
-
     // List invoices with search and pagination
     public IActionResult Index()
     {
@@ -35,9 +35,17 @@ public class InvoicesController : Controller
             InvoicePayments = new List<InvoicePayment>()
         };
 
-        ViewData["Products"] = _productRepository.GetAll(); // Ensure this returns a valid list of products
-        return View("Edit",invoice);
+        // Convert the product list into SelectListItem
+        ViewData["Products"] = _productRepository.GetAll()
+            .Select(p => new SelectListItem
+            {
+                Value = p.ProductId.ToString(),
+                Text = p.Name
+            }).ToList();
+
+        return View("Edit", invoice);
     }
+
 
 
     // POST: Save (Add or Update) an invoice
@@ -129,7 +137,49 @@ public class InvoicesController : Controller
 
         return View(invoice);
     }
+    public IActionResult CreateOrEditInvoice(int? id)
+    {
+        var model = new Invoice();
 
+        if (id.HasValue)
+        {
+            model = _invoicesRepository.GetInvoiceById(id.Value);
+            if (model == null)
+            {
+                return NotFound();
+            }
+        }
+
+        // Fetch product list from the repository
+        ViewBag.Products = _productRepository.GetAll()
+            .Select(p => new SelectListItem
+            {
+                Value = p.ProductId.ToString(),
+                Text = p.Name
+            }).ToList();
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public IActionResult CreateOrEditInvoice(Invoice model)
+    {
+       
+        if (model.InvoiceId == 0)
+        {
+            InvoicePayment InvoicePayment =new InvoicePayment();
+            InvoicePayment.Amount = model.TotalAmount;
+            InvoicePayment.PaymentDate = model.InvoiceDate;
+            model.InvoicePayments.Add(InvoicePayment);
+           _invoicesRepository.AddInvoiceWithDetailsAndPayments(model);
+        }
+        else
+        {
+            _invoicesRepository.UpdateInvoiceWithDetailsAndPayments(model);
+        }
+
+        return RedirectToAction("Index");
+    }
     // Delete an invoice
     public IActionResult Delete(int id)
     {

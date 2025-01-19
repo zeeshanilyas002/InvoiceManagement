@@ -39,7 +39,7 @@
                 <tr>
                     <td>@payment.PaymentId</td>
                     <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
-                    <td>@payment.Amount.ToString("C")</td>
+                    <td>@payment.Amount.ToString()</td>
                     <td>
                         <a asp-action="EditPayment" asp-route-id="@payment.PaymentId" asp-route-invoiceId="@invoiceId" class="btn btn-warning btn-sm">Edit</a>
                         <a asp-action="DeletePayment" asp-route-id="@payment.PaymentId" asp-route-invoiceId="@invoiceId" class="btn btn-danger btn-sm">Delete</a>

@@ -8,7 +8,7 @@ namespace InvoiceManagement.Models
 {
     public class Invoice
     {
-        public int InvoiceId { get; set; } // Primary Key
+        public int InvoiceId { get; set; }  // Primary Key
         public string CustomerName { get; set; } // Name of the customer
         public DateTime InvoiceDate { get; set; } // Date of the invoice
 
