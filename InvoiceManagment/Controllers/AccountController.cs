@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 public class AccountController : Controller
 {
     private const string HardcodedUsername = "admin";
-    private const string HardcodedPassword = "password123";
+    private const string HardcodedPassword = "admin";
 
     // GET: Login Page
     public IActionResult Login()

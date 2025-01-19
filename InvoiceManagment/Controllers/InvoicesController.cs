@@ -17,31 +17,16 @@ public class InvoicesController : Controller
     }
 
     // List invoices with search and pagination
-    public IActionResult Index(string searchTerm, DateTime? searchDate, int page = 1)
+    public IActionResult Index()
     {
         var invoices = _invoicesRepository.GetAllInvoices();
-
-        // Search and filter
-        if (!string.IsNullOrEmpty(searchTerm))
-        {
-            invoices = invoices.Where(i => i.CustomerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
-        }
-        if (searchDate.HasValue)
-        {
-            invoices = invoices.Where(i => i.InvoiceDate.Date == searchDate.Value.Date);
-        }
-
-        // Pagination
-        int pageSize = 10;
-        var pagedInvoices = invoices.ToPagedList(page, pageSize);
-
-        ViewData["SearchTerm"] = searchTerm;
-        ViewData["SearchDate"] = searchDate;
-
-        return View(pagedInvoices);
+        return View(invoices);
     }
 
+
+
     // Create a new invoice
+    // GET: Create a new invoice
     public IActionResult Create()
     {
         var invoice = new Invoice
@@ -50,32 +35,18 @@ public class InvoicesController : Controller
             InvoicePayments = new List<InvoicePayment>()
         };
 
-        ViewData["Products"] = _productRepository.GetAll();
-        return View("Edit", invoice);
-    }
-
-    // Edit an existing invoice
-    public IActionResult Edit(int id)
-    {
-        var invoice = _invoicesRepository.GetInvoiceById(id);
-        if (invoice == null)
-        {
-            return NotFound();
-        }
-
-        invoice.InvoiceDetails = _invoicesRepository.GetInvoiceDetailsByInvoiceId(id).ToList();
-        invoice.InvoicePayments = _invoicesRepository.GetInvoicePaymentsByInvoiceId(id).ToList();
-
-        ViewData["Products"] = _productRepository.GetAll();
+        ViewData["Products"] = _productRepository.GetAll(); // Ensure this returns a valid list of products
         return View(invoice);
     }
 
-    // Save (Add or Update) an invoice
+
+    // POST: Save (Add or Update) an invoice
     [HttpPost]
     public IActionResult Save(Invoice invoice)
     {
         if (!ModelState.IsValid)
         {
+            // Reload products if validation fails
             ViewData["Products"] = _productRepository.GetAll();
             return View("Edit", invoice);
         }
@@ -85,12 +56,14 @@ public class InvoicesController : Controller
             // Add a new invoice
             var newInvoiceId = _invoicesRepository.AddInvoice(invoice);
 
+            // Save invoice details
             foreach (var detail in invoice.InvoiceDetails)
             {
                 detail.InvoiceId = newInvoiceId;
                 _invoicesRepository.AddInvoiceDetail(detail);
             }
 
+            // Save invoice payments
             foreach (var payment in invoice.InvoicePayments)
             {
                 payment.InvoiceId = newInvoiceId;
@@ -99,37 +72,62 @@ public class InvoicesController : Controller
         }
         else
         {
-            // Update existing invoice
+            // Update an existing invoice
             _invoicesRepository.UpdateInvoice(invoice);
 
+            // Update or add invoice details
             foreach (var detail in invoice.InvoiceDetails)
             {
                 if (detail.InvoiceDetailId == 0)
                 {
+                    // Add new detail
                     detail.InvoiceId = invoice.InvoiceId;
                     _invoicesRepository.AddInvoiceDetail(detail);
                 }
                 else
                 {
+                    // Update existing detail
                     _invoicesRepository.UpdateInvoiceDetail(detail);
                 }
             }
 
+            // Update or add invoice payments
             foreach (var payment in invoice.InvoicePayments)
             {
                 if (payment.PaymentId == 0)
                 {
+                    // Add new payment
                     payment.InvoiceId = invoice.InvoiceId;
                     _invoicesRepository.AddInvoicePayment(payment);
                 }
                 else
                 {
+                    // Update existing payment
                     _invoicesRepository.UpdateInvoicePayment(payment);
                 }
             }
         }
 
         return RedirectToAction("Index");
+    }
+
+    // GET: Edit an existing invoice
+    public IActionResult Edit(int id)
+    {
+        var invoice = _invoicesRepository.GetInvoiceById(id);
+        if (invoice == null)
+        {
+            return NotFound();
+        }
+
+        // Load invoice details and payments
+        invoice.InvoiceDetails = _invoicesRepository.GetInvoiceDetailsByInvoiceId(id).ToList();
+        invoice.InvoicePayments = _invoicesRepository.GetInvoicePaymentsByInvoiceId(id).ToList();
+
+        // Load products for the dropdown
+        ViewData["Products"] = _productRepository.GetAll();
+
+        return View(invoice);
     }
 
     // Delete an invoice

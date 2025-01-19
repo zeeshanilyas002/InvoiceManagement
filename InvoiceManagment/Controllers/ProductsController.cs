@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace InvoiceManagment.Controllers
 {
+    [AuthenticationFilter]
     public class ProductsController : Controller
     {
         private readonly IProductRepository _productRepository;

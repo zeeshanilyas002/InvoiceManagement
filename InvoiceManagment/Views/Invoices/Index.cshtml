@@ -1,5 +1,4 @@
-﻿@model PagedList.IPagedList<Invoice>
-@using PagedList.Mvc
+﻿@model IEnumerable<InvoiceManagement.Models.Invoice>
 
 @{
     ViewData["Title"] = "Invoices";
@@ -8,25 +7,20 @@
 <h1>Invoices</h1>
 
 <!-- Search Form -->
-<form method="get" class="mb-3">
+<form method="get" id="invoiceSearchForm" class="mb-3">
     <div class="row">
         <!-- Search by Customer Name -->
         <div class="col-md-4">
             <label for="searchTerm">Customer Name</label>
-            <input type="text" name="searchTerm" id="searchTerm" class="form-control" placeholder="Search by Customer Name" value="@ViewData["SearchTerm"]" />
+            <input type="text" name="searchTerm" id="searchTerm" class="form-control" placeholder="Search by Customer Name" />
         </div>
         <!-- Search by Invoice Date -->
         <div class="col-md-4">
             <label for="searchDate">Invoice Date</label>
-            <input type="date" name="searchDate" id="searchDate" class="form-control" value="@ViewData["SearchDate"]" />
-        </div>
-        <!-- Search Button -->
-        <div class="col-md-2">
-            <label>&nbsp;</label> <!-- Spacer for alignment -->
-            <button type="submit" class="btn btn-primary w-100">Search</button>
+            <input type="date" name="searchDate" id="searchDate" class="form-control" />
         </div>
         <!-- Add New Invoice -->
-        <div class="col-md-2">
+        <div class="col-md-2 offset-md-2">
             <label>&nbsp;</label>
             <a asp-action="Create" class="btn btn-success w-100">Add New Invoice</a>
         </div>
@@ -34,7 +28,7 @@
 </form>
 
 <!-- Invoice Table -->
-<table class="table table-bordered table-striped">
+<table id="invoiceTable" class="table table-bordered table-striped">
     <thead>
         <tr>
             <th>#</th>
@@ -61,32 +55,32 @@
                 </tr>
             }
         }
-        else
-        {
-            <tr>
-                <td colspan="5" class="text-center text-danger">No invoices found for the given search criteria.</td>
-            </tr>
-        }
     </tbody>
 </table>
 
-<!-- Pagination -->
-@if (Model.TotalItemCount > 0)
-{
-    <div class="pagination">
-        @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchTerm = ViewData["SearchTerm"], searchDate = ViewData["SearchDate"] }))
-    </div>
-}
-
 @section Scripts {
-    <script>
-        document.getElementById("invoiceForm").addEventListener("submit", function (event) {
-            const searchDate = document.getElementById("searchDate").value;
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
-            if (searchDate && isNaN(Date.parse(searchDate))) {
-                event.preventDefault();
-                alert("Please enter a valid date.");
-            }
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable
+            const table = $('#invoiceTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true
+            });
+
+            // Custom search handling for form fields
+            $('#searchTerm, #searchDate').on('keyup change', function () {
+                const term = $('#searchTerm').val().toLowerCase();
+                const date = $('#searchDate').val();
+
+                table.columns(1).search(term, true, false);
+                table.columns(2).search(date, true, false).draw();
+            });
         });
     </script>
 }

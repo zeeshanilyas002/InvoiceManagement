@@ -1,4 +1,4 @@
-﻿@model IEnumerable<InvoicePayment>
+﻿@model IEnumerable<InvoiceManagement.Models.InvoicePayment>
 
 @{
     ViewData["Title"] = "Manage Payments";
@@ -14,9 +14,9 @@
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="card-title">Invoice Summary</h5>
-        <p><strong>Total Amount:</strong> @totalAmount.ToString("C")</p>
-        <p><strong>Total Payments:</strong> @totalPayments.ToString("C")</p>
-        <p><strong>Remaining Balance:</strong> @remainingBalance.ToString("C")</p>
+        <p><strong>Total Amount:</strong> @totalAmount.ToString()</p>
+        <p><strong>Total Payments:</strong> @totalPayments.ToString()</p>
+        <p><strong>Remaining Balance:</strong> @remainingBalance.ToString()</p>
     </div>
 </div>
 
