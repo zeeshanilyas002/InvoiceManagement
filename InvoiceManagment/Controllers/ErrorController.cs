@@ -2,7 +2,7 @@
 
 public class ErrorController : Controller
 {
-    public IActionResult Index(string message)
+    public IActionResult message(string message)
     {
         ViewData["ErrorMessage"] = message;
         return View("GlobalError");

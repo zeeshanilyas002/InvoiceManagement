@@ -38,7 +38,7 @@ public class GlobalExceptionHandlerMiddleware
 
         // Redirect to the error view with the exception message
         var errorMessage = Uri.EscapeDataString(exception.Message);
-        var errorRedirect = $"/Error?message={errorMessage}";
+        var errorRedirect = $"/Error/message?message={errorMessage}";
         context.Response.Redirect(errorRedirect);
 
         return Task.CompletedTask;
