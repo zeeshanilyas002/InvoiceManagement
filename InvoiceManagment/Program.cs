@@ -24,7 +24,7 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
-
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
