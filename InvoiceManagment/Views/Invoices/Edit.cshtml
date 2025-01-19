@@ -55,7 +55,7 @@
                         </select>
                     </td>
                     <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].Quantity" class="form-control quantity" value="@detail.Quantity" /></td>
-                    <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].UnitPrice" class="form-control unitPrice" value="@detail.UnitPrice" /></td>
+                    <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].UnitPrice" class="form-control unitPrice" readonly value="@detail.UnitPrice" /></td>
                     <td><input type="text" class="form-control totalPrice" readonly value="@detail.TotalPrice.ToString()" /></td>
                     <td><button type="button" class="btn btn-danger btn-sm removeRow">Remove</button></td>
                 </tr>
@@ -98,29 +98,45 @@
                     </select>
                 </td>
                 <td><input type="number" name="InvoiceDetails[${rowCount}].Quantity" class="form-control quantity" value="1" /></td>
-                <td><input type="number" name="InvoiceDetails[${rowCount}].UnitPrice" class="form-control unitPrice" value="0" /></td>
+                <td><input type="number" name="InvoiceDetails[${rowCount}].UnitPrice" class="form-control unitPrice" readonly value="0" /></td>
                 <td><input type="text" class="form-control totalPrice" readonly value="0" /></td>
                 <td><button type="button" class="btn btn-danger btn-sm removeRow">Remove</button></td>
             `;
         });
 
-        // Fetch product price on selection
+        // Fetch product price and increment quantity if already added
         document.addEventListener("change", function (e) {
             if (e.target.classList.contains("product-select")) {
                 const productId = e.target.value;
+                const table = document.querySelector("#productTable tbody");
                 const row = e.target.closest("tr");
 
                 if (productId) {
-                    fetch(`/Products/GetPrice?productId=${productId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            row.querySelector(".unitPrice").value = data.unitPrice;
-                            row.querySelector(".quantity").dispatchEvent(new Event("input"));
-                        })
-                        .catch(error => {
-                            alert("Error fetching product price: " + error.message);
-                        });
+                    // Check if the product is already in the table
+                    let existingRow = Array.from(table.rows).find(r => r.querySelector(".product-select").value === productId);
+
+                    if (existingRow && existingRow !== row) {
+                        // Increment quantity if the product already exists
+                        const quantityField = existingRow.querySelector(".quantity");
+                        quantityField.value = parseInt(quantityField.value) + 1;
+                        quantityField.dispatchEvent(new Event("input"));
+
+                        // Remove the newly added row
+                        row.remove();
+                    } else {
+                        // Fetch product price and set it in the row
+                        fetch(`/Products/GetPrice?productId=${productId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                row.querySelector(".unitPrice").value = data.unitPrice;
+                                row.querySelector(".quantity").dispatchEvent(new Event("input"));
+                            })
+                            .catch(error => {
+                                alert("Error fetching product price: " + error.message);
+                            });
+                    }
                 } else {
+                    // Reset unit price and total if no product is selected
                     row.querySelector(".unitPrice").value = 0;
                     row.querySelector(".quantity").dispatchEvent(new Event("input"));
                 }
@@ -147,5 +163,13 @@
             });
             document.getElementById("totalAmount").innerText = total.toFixed(2);
         }
+
+        // Remove Product Row
+        document.addEventListener("click", function (e) {
+            if (e.target.classList.contains("removeRow")) {
+                e.target.closest("tr").remove();
+                calculateTotalAmount();
+            }
+        });
     </script>
 }
