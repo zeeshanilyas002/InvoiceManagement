@@ -1,0 +1,92 @@
+﻿@model PagedList.IPagedList<Invoice>
+@using PagedList.Mvc
+
+@{
+    ViewData["Title"] = "Invoices";
+}
+
+<h1>Invoices</h1>
+
+<!-- Search Form -->
+<form method="get" class="mb-3">
+    <div class="row">
+        <!-- Search by Customer Name -->
+        <div class="col-md-4">
+            <label for="searchTerm">Customer Name</label>
+            <input type="text" name="searchTerm" id="searchTerm" class="form-control" placeholder="Search by Customer Name" value="@ViewData["SearchTerm"]" />
+        </div>
+        <!-- Search by Invoice Date -->
+        <div class="col-md-4">
+            <label for="searchDate">Invoice Date</label>
+            <input type="date" name="searchDate" id="searchDate" class="form-control" value="@ViewData["SearchDate"]" />
+        </div>
+        <!-- Search Button -->
+        <div class="col-md-2">
+            <label>&nbsp;</label> <!-- Spacer for alignment -->
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+        <!-- Add New Invoice -->
+        <div class="col-md-2">
+            <label>&nbsp;</label>
+            <a asp-action="Create" class="btn btn-success w-100">Add New Invoice</a>
+        </div>
+    </div>
+</form>
+
+<!-- Invoice Table -->
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Customer Name</th>
+            <th>Invoice Date</th>
+            <th>Total Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Any())
+        {
+            foreach (var invoice in Model)
+            {
+                <tr>
+                    <td>@invoice.InvoiceId</td>
+                    <td>@invoice.CustomerName</td>
+                    <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd")</td>
+                    <td>@invoice.TotalAmount.ToString("C")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@invoice.InvoiceId" class="btn btn-warning btn-sm">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@invoice.InvoiceId" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5" class="text-center text-danger">No invoices found for the given search criteria.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+@if (Model.TotalItemCount > 0)
+{
+    <div class="pagination">
+        @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchTerm = ViewData["SearchTerm"], searchDate = ViewData["SearchDate"] }))
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById("invoiceForm").addEventListener("submit", function (event) {
+            const searchDate = document.getElementById("searchDate").value;
+
+            if (searchDate && isNaN(Date.parse(searchDate))) {
+                event.preventDefault();
+                alert("Please enter a valid date.");
+            }
+        });
+    </script>
+}

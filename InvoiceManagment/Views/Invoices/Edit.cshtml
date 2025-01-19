@@ -1,0 +1,173 @@
+﻿@model Invoice
+
+@{
+    ViewData["Title"] = Model.InvoiceId == 0 ? "Add Invoice" : "Edit Invoice";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Save" method="post" id="invoiceForm">
+    <input type="hidden" asp-for="InvoiceId" />
+
+    <!-- Header Section -->
+    <div class="form-group">
+        <label for="CustomerName">Customer Name</label>
+        <input type="text" asp-for="CustomerName" class="form-control" />
+        <span asp-validation-for="CustomerName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="InvoiceDate">Invoice Date</label>
+        <input type="date" asp-for="InvoiceDate" class="form-control" />
+        <span asp-validation-for="InvoiceDate" class="text-danger"></span>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" id="invoiceTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="products-tab" data-toggle="tab" href="#products" role="tab">Products</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="payments-tab" data-toggle="tab" href="#payments" role="tab">Payments</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Products Tab -->
+        <div class="tab-pane fade show active" id="products" role="tabpanel">
+            <h3>Products</h3>
+            <table class="table" id="productTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detail in Model.InvoiceDetails)
+                    {
+                        <tr>
+                            <td>
+                                <select name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].ProductId" class="form-control">
+                                    <option value="@detail.ProductId">@detail.ProductName</option>
+                                    <!-- Add product options dynamically -->
+                                </select>
+                            </td>
+                            <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].Quantity" class="form-control" value="@detail.Quantity" /></td>
+                            <td><input type="number" name="InvoiceDetails[@Model.InvoiceDetails.IndexOf(detail)].UnitPrice" class="form-control" value="@detail.UnitPrice" /></td>
+                            <td><input type="text" class="form-control" readonly value="@detail.TotalPrice.ToString("C")" /></td>
+                            <td><button type="button" class="btn btn-danger">Remove</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-secondary">Add Product</button>
+        </div>
+
+        <!-- Payments Tab -->
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+            <h3>Payments</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Payment Date</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in Model.InvoicePayments)
+                    {
+                        <tr>
+                            <td><input type="date" name="InvoicePayments[@Model.InvoicePayments.IndexOf(payment)].PaymentDate" class="form-control" value="@payment.PaymentDate.ToString("yyyy-MM-dd")" /></td>
+                            <td><input type="number" name="InvoicePayments[@Model.InvoicePayments.IndexOf(payment)].Amount" class="form-control" value="@payment.Amount" /></td>
+                            <td><button type="button" class="btn btn-danger">Remove</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-secondary">Add Payment</button>
+        </div>
+    </div>
+
+    <!-- Invoice Total -->
+    <h4>Total Amount: <span id="totalAmount">0.00</span></h4>
+
+    <div class="form-group mt-4">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+
+@section Scripts {
+    <script>
+        // Add Product Row
+        document.getElementById("addProductRow").addEventListener("click", function () {
+            const table = document.getElementById("productTable").getElementsByTagName("tbody")[0];
+            const row = table.insertRow();
+
+            row.innerHTML = `
+                        <td>
+                            <select name="InvoiceDetails[${table.rows.length - 1}].ProductId" class="form-control product-select">
+                                <option value="">Select Product</option>
+                                <option value="1">Product A</option>
+                                <option value="2">Product B</option>
+                            </select>
+                        </td>
+                        <td><input type="number" name="InvoiceDetails[${table.rows.length - 1}].Quantity" class="form-control quantity" value="1" /></td>
+                        <td><input type="number" name="InvoiceDetails[${table.rows.length - 1}].UnitPrice" class="form-control unitPrice" value="0" /></td>
+                        <td><input type="text" class="form-control totalPrice" readonly value="0" /></td>
+                        <td><button type="button" class="btn btn-danger btn-sm removeProductRow">Remove</button></td>
+                    `;
+        });
+
+        // Add Payment Row
+        document.getElementById("addPaymentRow").addEventListener("click", function () {
+            const table = document.getElementById("paymentTable").getElementsByTagName("tbody")[0];
+            const row = table.insertRow();
+
+            row.innerHTML = `
+                        <td><input type="date" name="InvoicePayments[${table.rows.length - 1}].PaymentDate" class="form-control" /></td>
+                        <td><input type="number" name="InvoicePayments[${table.rows.length - 1}].Amount" class="form-control paymentAmount" value="0" /></td>
+                        <td><button type="button" class="btn btn-danger btn-sm removePaymentRow">Remove</button></td>
+                    `;
+        });
+
+        // Calculate Invoice Total
+        function calculateTotalAmount() {
+            const rows = document.querySelectorAll("#productTable .totalPrice");
+            let total = 0;
+
+            rows.forEach(row => {
+                total += parseFloat(row.value) || 0;
+            });
+
+            document.getElementById("totalAmount").innerText = total.toFixed(2);
+        }
+
+        // Remove Product/Payment Row
+        document.addEventListener("click", function (e) {
+            if (e.target && (e.target.classList.contains("removeProductRow") || e.target.classList.contains("removePaymentRow"))) {
+                e.target.closest("tr").remove();
+                calculateTotalAmount();
+            }
+        });
+
+        // Recalculate Total Price
+        document.addEventListener("input", function (e) {
+            if (e.target && (e.target.classList.contains("quantity") || e.target.classList.contains("unitPrice"))) {
+                const row = e.target.closest("tr");
+                const quantity = row.querySelector(".quantity").value || 0;
+                const unitPrice = row.querySelector(".unitPrice").value || 0;
+                const totalPrice = row.querySelector(".totalPrice");
+
+                totalPrice.value = (quantity * unitPrice).toFixed(2);
+                calculateTotalAmount();
+            }
+        });
+    </script>
+}
