@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PagedList.Core;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 [AuthenticationFilter]
 public class InvoicesController : Controller
@@ -132,11 +133,17 @@ public class InvoicesController : Controller
         invoice.InvoiceDetails = _invoicesRepository.GetInvoiceDetailsByInvoiceId(id).ToList();
         invoice.InvoicePayments = _invoicesRepository.GetInvoicePaymentsByInvoiceId(id).ToList();
 
-        // Load products for the dropdown
-        ViewData["Products"] = _productRepository.GetAll();
+        // Convert the product list into SelectListItem
+        ViewData["Products"] = _productRepository.GetAll()
+            .Select(p => new SelectListItem
+            {
+                Value = p.ProductId.ToString(),
+                Text = p.Name
+            }).ToList();
 
         return View(invoice);
     }
+
     public IActionResult CreateOrEditInvoice(int? id)
     {
         var model = new Invoice();
@@ -200,7 +207,7 @@ public class InvoicesController : Controller
             return NotFound();
         }
 
-        _invoicesRepository.DeleteInvoice(id);
+        _invoicesRepository.DeleteInvoiceWithDetails(id);
         return RedirectToAction("Index");
     }
 
@@ -244,19 +251,41 @@ public class InvoicesController : Controller
         _invoicesRepository.DeleteInvoiceDetail(detailId);
         return Ok();
     }
-
-    // Manage payments for an invoice
+    [HttpGet]
     public IActionResult Payments(int id)
     {
-        var payments = _invoicesRepository.GetInvoicePaymentsByInvoiceId(id);
+        // Get payments for the specified invoice ID
+        var payments = _invoicesRepository.GetAllPayments();
         var invoice = _invoicesRepository.GetInvoiceById(id);
 
+        // Pass invoice details to the view
         ViewData["InvoiceId"] = id;
         ViewData["TotalAmount"] = invoice?.TotalAmount ?? 0;
 
         return View(payments);
     }
 
+    [HttpPost]
+    public IActionResult SearchPayments(int id, string searchQuery)
+    {
+        // Get payments for the specified invoice ID
+        var payments = _invoicesRepository.GetAllPayments(id); 
+
+        // Filter payments based on the search query
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            payments = payments
+                .Where(p => p.PaymentId.ToString().Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                            p.PaymentDate.ToString("yyyy-MM-dd").Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                            p.Amount.ToString("C").Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        return PartialView("_PaymentsGrid", payments);
+    }
+
+    // Manage payments for an invoice
+    
 
     // Add a new payment
     [HttpPost]

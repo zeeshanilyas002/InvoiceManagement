@@ -1,63 +1,51 @@
 ﻿@model IEnumerable<InvoiceManagement.Models.InvoicePayment>
 
 @{
-    ViewData["Title"] = "Manage Payments";
-    var invoiceId = ViewData["InvoiceId"] ?? 0;
-    var totalAmount = ViewData["TotalAmount"] ?? 0M; // Total amount of the invoice
-    var totalPayments = Model.Sum(p => p.Amount); // Calculate total payments made
-    var remainingBalance = (decimal)totalAmount - totalPayments; // Calculate remaining balance
+    ViewData["Title"] = "Invoice Payments";
 }
 
-<h1>Manage Payments</h1>
+<h1>Invoice Payments</h1>
 
-<!-- Summary Section -->
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="card-title">Invoice Summary</h5>
-        <p><strong>Total Amount:</strong> @totalAmount.ToString()</p>
-        <p><strong>Total Payments:</strong> @totalPayments.ToString()</p>
-        <p><strong>Remaining Balance:</strong> @remainingBalance.ToString()</p>
-    </div>
+@* <div class="form-group mb-3">
+    <label for="invoiceId">Invoice ID</label>
+    <input type="text" id="invoiceId" class="form-control" value="@ViewData["InvoiceId"]" />
 </div>
-
-<!-- Payments List -->
+ *@
 <h3>Payments</h3>
-<table class="table table-bordered">
+<table id="paymentsTable" class="table table-bordered table-striped">
     <thead>
         <tr>
-            <th>#</th>
+            <th>Payment ID</th>
             <th>Payment Date</th>
             <th>Amount</th>
-            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @if (Model.Any())
-        {
-            foreach (var payment in Model)
-            {
-                <tr>
-                    <td>@payment.PaymentId</td>
-                    <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
-                    <td>@payment.Amount.ToString()</td>
-                    <td>
-                        <a asp-action="EditPayment" asp-route-id="@payment.PaymentId" asp-route-invoiceId="@invoiceId" class="btn btn-warning btn-sm">Edit</a>
-                        <a asp-action="DeletePayment" asp-route-id="@payment.PaymentId" asp-route-invoiceId="@invoiceId" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-            }
-        }
-        else
+        @foreach (var payment in Model)
         {
             <tr>
-                <td colspan="4" class="text-center text-danger">No payments found for this invoice.</td>
+                <td>@payment.PaymentId</td>
+                <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
+                <td>@payment.Amount.ToString("C")</td>
             </tr>
         }
     </tbody>
 </table>
 
-<!-- Add Payment Button -->
-<a asp-action="AddPayment" asp-route-invoiceId="@invoiceId" class="btn btn-primary mb-3">Add Payment</a>
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
-<!-- Back to Invoice Button -->
-<a asp-action="Edit" asp-controller="Invoices" asp-route-id="@invoiceId" class="btn btn-secondary">Back to Invoice</a>
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable
+            $('#paymentsTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true
+            });
+        });
+    </script>
+}

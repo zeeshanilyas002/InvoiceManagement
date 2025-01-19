@@ -15,7 +15,7 @@ namespace InvoiceManagement.Data
         int AddInvoice(Invoice invoice); // Returns the generated InvoiceId
         void UpdateInvoice(Invoice invoice);
         void DeleteInvoice(int id);
-
+        void DeleteInvoiceWithDetails(int invoiceId);
         // Invoice Details (Master-Detail)
         IEnumerable<InvoiceDetail> GetInvoiceDetailsByInvoiceId(int invoiceId);
         void AddInvoiceDetail(InvoiceDetail detail);
@@ -31,6 +31,7 @@ namespace InvoiceManagement.Data
         void UpdateInvoiceWithDetailsAndPayments(Invoice invoice);
         // Calculations
         decimal GetTotalPaymentsForInvoice(int invoiceId);
+        IEnumerable<InvoicePayment> GetAllPayments(int? invoiceId = null, int? paymentId = null, DateTime? paymentDate = null, decimal? amount = null);
     }
 
 }

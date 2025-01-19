@@ -74,6 +74,24 @@ namespace InvoiceManagement.Data
             }
             return invoice;
         }
+        public void DeleteInvoiceWithDetails(int invoiceId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                using (var command = new SqlCommand("DeleteInvoiceWithDetails", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    // Add the InvoiceId parameter
+                    command.Parameters.AddWithValue("@InvoiceId", invoiceId);
+
+                    // Execute the procedure
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
 
         public int AddInvoice(Invoice invoice)
         {
@@ -124,7 +142,6 @@ namespace InvoiceManagement.Data
                 }
             }
         }
-
         // Details: InvoiceDetails
         public IEnumerable<InvoiceDetail> GetInvoiceDetailsByInvoiceId(int invoiceId)
         {
@@ -413,7 +430,7 @@ namespace InvoiceManagement.Data
                         }
 
                         // Delete existing InvoicePayments to allow re-insertion
-                        using (var command = new SqlCommand("DeleteInvoicePaymentsByInvoiceId", connection))
+                        using (var command = new SqlCommand("[DeleteInvoiceDetail]", connection))
                         {
                             command.CommandType = CommandType.StoredProcedure;
                             command.Parameters.AddWithValue("@InvoiceId", invoice.InvoiceId);
@@ -446,6 +463,44 @@ namespace InvoiceManagement.Data
                 }
             }
         }
+
+        public IEnumerable<InvoicePayment> GetAllPayments(int? invoiceId = null, int? paymentId = null, DateTime? paymentDate = null, decimal? amount = null)
+        {
+            var payments = new List<InvoicePayment>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                using (var command = new SqlCommand("GetAllPayments", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    // Add optional parameters
+                    command.Parameters.AddWithValue("@InvoiceId", invoiceId.HasValue ? (object)invoiceId.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@PaymentId", paymentId.HasValue ? (object)paymentId.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@PaymentDate", paymentDate.HasValue ? (object)paymentDate.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@Amount", amount.HasValue ? (object)amount.Value : DBNull.Value);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            payments.Add(new InvoicePayment
+                            {
+                                PaymentId = (int)reader["PaymentId"],
+                                InvoiceId = (int)reader["InvoiceId"],
+                                PaymentDate = (DateTime)reader["PaymentDate"],
+                                Amount = (decimal)reader["Amount"]
+                            });
+                        }
+                    }
+                }
+            }
+
+            return payments;
+        }
+
 
     }
 
