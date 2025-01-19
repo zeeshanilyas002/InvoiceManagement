@@ -36,7 +36,7 @@ public class InvoicesController : Controller
         };
 
         ViewData["Products"] = _productRepository.GetAll(); // Ensure this returns a valid list of products
-        return View(invoice);
+        return View("Edit",invoice);
     }
 
 
@@ -141,9 +141,15 @@ public class InvoicesController : Controller
         return View(invoice);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
     public IActionResult DeleteConfirmed(int id)
     {
+        var invoice = _invoicesRepository.GetInvoiceById(id);
+        if (invoice == null)
+        {
+            return NotFound();
+        }
+
         _invoicesRepository.DeleteInvoice(id);
         return RedirectToAction("Index");
     }
