@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 [AuthenticationFilter]
+[Route("Invoice/[action]")]
 public class InvoicesController : Controller
 {
     private readonly IInvoicesRepository _invoicesRepository;

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace InvoiceManagment.Controllers
 {
     [AuthenticationFilter]
+    [Route("Product/[action]")]
     public class ProductsController : Controller
     {
         private readonly IProductRepository _productRepository;
